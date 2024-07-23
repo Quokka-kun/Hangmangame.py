@@ -1,135 +1,101 @@
 import random
 
-print('Welcome, you have to find a word, by guessing letters. You have 10 attempts.')
+class Hangman:
+    def __init__(self, word_list_file):
+        self.words = self.load_words(word_list_file)
+        self.reset_game()
 
-# list of words in words.txt
-words = []
-with open('words.txt') as f:
-    words = f.read().splitlines()
+    def load_words(self, file_name):
+        try:
+            with open(file_name) as f:
+                return f.read().splitlines()
+        except FileNotFoundError:
+            print("Le fichier des mots est introuvable.")
+            return []
 
-# choose a random word from the list
-word = random.choice(words)
+    def reset_game(self):
+        self.word = random.choice(self.words)
+        self.display = ['_'] * len(self.word)
+        self.attempts = 10
+        self.guessed_letters = []
 
-# create a list of underscores with the same length as the word
-display = ['_'] * len(word)
+    def display_game(self):
+        print(' '.join(self.display))
+        print('Attempts left:', self.attempts)
+        print('Guessed letters:', ' '.join(self.guessed_letters))
 
-# number of attempts
-attempts = 10
+    def replace_letter(self, letter):
+        for i in range(len(self.word)):
+            if self.word[i] == letter:
+                self.display[i] = letter
 
-# list of guessed letters
-guessed_letters = []
-
-# Create a function to display the current state of the game
-def display_game():
-    print(' '.join(display))
-    print('Attempts left:', attempts)
-    print('Guessed letters:', ' '.join(guessed_letters))
-
-# Create a fonction to replace display by right guessed letters
-def replace_letter(letter):
-    for i in range(len(word)):
-        if word[i] == letter:
-            display[i] = letter
-
-# Create a function to check if the player has won
-def check_win():
-    if '_' not in display:
-        print('Congratulations, you won 🏆')
-        return True
-    else:
+    def check_win(self):
+        if '_' not in self.display:
+            print('Congratulations, you won 🏆')
+            return True
         return False
 
-# Create a function to check if the player has lost
-def check_loss():
-    if attempts == 0:
-        print('Sorry, you lost 💀 The word was', word)
-        return True
-    else:
+    def check_loss(self):
+        if self.attempts == 0:
+            print('Sorry, you lost 💀 The word was', self.word)
+            return True
         return False
 
-# Create a function to handle a player's guess
-def handle_guess(guess):
-    global attempts
-    global guessed_letters
-    if guess in guessed_letters:
-        print('You already guessed that letter.')
-    elif guess in word:
-        print('Correct!')
-        guessed_letters.append(guess)
-    else:
-        print('Incorrect.')
-        attempts -= 1
-        guessed_letters.append(guess)
+    def handle_guess(self, guess):
+        if guess in self.guessed_letters:
+            print('You already guessed that letter.')
+        elif guess in self.word:
+            print('Correct!')
+            self.guessed_letters.append(guess)
+        else:
+            print('Incorrect.')
+            self.attempts -= 1
+            self.guessed_letters.append(guess)
 
-#draw the hangman with specials characters
-def draw_hangman(attempts):
-  if attempts == 9:
-    print('  _______')
-    print(' |')
-    print(' |')
-    print(' |')
-  if attempts == 8:
-    print('  _______')
-    print(' |')
-    print(' |')
-    print(' |')
-    print(' |')
-  if attempts == 7:
-    print('  _______')
-    print(' |       |')
-    print(' |')
-    print(' |')
-    print(' |')
-  if attempts == 6:
-    print('  _______')
-    print(' |       |')
-    print(' |       🙁')
-    print(' |')
-    print(' |')
-  if attempts == 5:
-    print('  _______')
-    print(' |       |')
-    print(' |       ☹️')
-    print(' |       |')
-    print(' |')
-  if attempts == 4:
-    print('  _______')
-    print(' |       |')
-    print(' |       😩')
-    print(' |      /|')
-    print(' |')
-  if attempts == 3:
-    print('  _______')
-    print(' |       |')
-    print(' |       😓')
-    print(' |      /|\\')
-  if attempts == 2:
-    print('  _______')
-    print(' |       |')
-    print(' |       😖')
-    print(' |      /|\\')
-    print(' |      /')
-  if attempts == 1:
-    print('  _______')
-    print(' |       |')
-    print(' |       😰')
-    print(' |      /|\\')
-    print(' |      / \\')
-  if attempts == 0:
-    print('  _______')
-    print(' |       |')
-    print(' |      💀')
-    print(' |      /|\\')
-    print(' |      / \\')
+    def draw_hangman(self):
+        hangman_states = {
+            9: ['  _______\n |', ' |', ' |'],
+            8: ['  _______\n |', ' |', ' |'],
+            7: ['  _______\n |       |', ' |', ' |'],
+            6: ['  _______\n |       |', ' |       🙁', ' |'],
+            5: ['  _______\n |       |', ' |       ☹️', ' |       |'],
+            4: ['  _______\n |       |', ' |       😩', ' |      /|'],
+            3: ['  _______\n |       |', ' |       😓', ' |      /|\\'],
+            2: ['  _______\n |       |', ' |       😖', ' |      /|\\', ' |      /'],
+            1: ['  _______\n |       |', ' |       😰', ' |      /|\\', ' |      / \\'],
+            0: ['  _______\n |       |', ' |      💀', ' |      /|\\', ' |      / \\']
+        }
+        for line in hangman_states.get(self.attempts, ['' for _ in range(4)]):
+            print(line)
 
-# Main game with draw_hangman()
-while True:
-    display_game()
-    guess = input('Guess a letter: ').lower()
-    handle_guess(guess)
-    replace_letter(guess)
-    if check_win():
-        break
-    draw_hangman(attempts)
-    if check_loss():
-        break
+    def play_game(self):
+        while True:
+            self.display_game()
+            guess = input('Guess a letter: ').lower()
+            if len(guess) != 1 or not guess.isalpha():
+                print("Invalid input. Please enter a single letter.")
+                continue
+            self.handle_guess(guess)
+            self.replace_letter(guess)
+            if self.check_win():
+                break
+            self.draw_hangman()
+            if self.check_loss():
+                break
+
+    def ask_to_play_again(self):
+        while True:
+            replay = input("Do you want to play again? (yes/no): ").strip().lower()
+            if replay == 'yes':
+                self.reset_game()
+                self.play_game()
+            elif replay == 'no':
+                print("Thank you for playing!")
+                break
+            else:
+                print("Invalid input. Please enter 'yes' or 'no'.")
+
+if __name__ == "__main__":
+    game = Hangman('words.txt')
+    game.play_game()
+    game.ask_to_play_again()
